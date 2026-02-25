@@ -1,0 +1,386 @@
+<?xml version='1.0' encoding='utf-8'?>
+<report><team><direction>Informatyka</direction><specialization>brak specjalizacji</specialization><specialization_missing>true</specialization_missing><level>magisterskie</level><academic_year>2025/2026</academic_year><semester>I</semester><exercise_date>2026-02-25</exercise_date><report_date>2026-02-25</report_date><students><student><full_name>Władysław Liegmanowski</full_name><index_no>97722</index_no><make_up>false</make_up><conditional>false</conditional></student><student><full_name>Krystian Twarowski</full_name><index_no>97749</index_no><make_up>false</make_up><conditional>false</conditional></student></students></team><task_meta><subject>Zaawansowane techniki programistyczne [1300-Inf11ZTP-SD]</subject><academic_year /><semester_term /><exercise_set_no>5</exercise_set_no><exercise_set_name>Deskryptory audio (MPEG-7), analiza cech, wektor cech i klasyfikacja kNN/SVM</exercise_set_name></task_meta><form><report_description>W tym zestawie ćwiczeń poznasz deskryptory audio zgodne ze standardem MPEG-7, nauczysz się budować wektor cech oraz stosować klasyfikację kNN i SVM do rozpoznawania dźwięków.</report_description><exercises><exercise><exercise_no>0</exercise_no><title>Wprowadzenie do deskryptorów audio</title><intro>Przetwarzanie audio w zastosowaniach technicznych, muzycznych, biomedycznych czy AI nie opiera się na wizualnej ocenie wykresu, lecz na wartościowych liczbach opisujących sygnał. Takie liczby to deskryptory (ang. features), a ich zestaw to wektor cech.
+
+Cechy muszą:
+
+– być obliczalne szybko,
+– dobrze reprezentować sygnał,
+– odróżniać różne klasy dźwięków,
+– być odporne na szum i różnice amplitudy.
+
+Standard MPEG-7 wymienia wiele deskryptorów, z których kilka najważniejszych to:
+
+– ZCR (Zero Crossing Rate) — miara szorstkości / szumu,
+– RMS — energia sygnału,
+– Centroid widmowy — „jasność” dźwięku,
+– Spectral spread — szerokość widma,
+– Brightness — energia powyżej konkretnego progu częstotliwości,
+– Tristimulus T1–T3 — opis udziału harmonicznych.
+
+W tym zestawie nauczysz się obliczać najczęściej stosowane deskryptory, budować wektor cech i klasyfikować dźwięki.
+
+Do zadań wykorzystaj pliki z poprzedniego ćwiczenia.</intro><tasks><task><task_no>0</task_no><title /><description>Przygotuj (skopiuj do katalogu roboczego) pliki audio z poprzedniego zestawu ćwiczeń:
+
+tone_440.wav
+tone_noisy.wav
+two_tones.wav
+
+Upewnij się, że wczytujesz je poprawnie w Pythonie (ścieżki, format WAV) i że sygnał po normalizacji nie ma wartości NaN/Inf.</description><student_code>def load(path):
+    fs, x = wavfile.read(path)
+    x = x.astype(float)
+    return x / np.max(np.abs(x))
+files = [r"zaj5\tone_440.wav", r"zaj5\tone_noisy.wav", r"zaj5\twotones.wav"]</student_code><code_description>kod ładuje pliki wav</code_description><comments_in_code>false</comments_in_code><images /><notes /></task></tasks></exercise><exercise><exercise_no>1</exercise_no><title>Zero Crossing Rate (ZCR)</title><intro>ZCR opisuje liczbę przejść sygnału przez zero w jednostce czasu i pozwala odróżnić sygnały tonalne od szumowych.</intro><example_code>import numpy as np
+from scipy.io import wavfile
+
+def ZCR(x):
+    signs = np.sign(x)
+    zero_crossings = np.where(np.diff(signs))[0]
+    return len(zero_crossings) / len(x)
+
+fs, x = wavfile.read("tone_noisy.wav")
+x = x.astype(float) / np.max(np.abs(x))
+
+print("ZCR =", ZCR(x))</example_code><tasks><task><task_no>1</task_no><title /><description>Oblicz ZCR dla plików:
+
+– tone_440.wav,
+– tone_noisy.wav,
+– two_tones.wav.
+
+Porównaj wyniki i zapisz wniosek: który sygnał jest najbardziej szumowy?</description><student_code>import numpy as np
+from scipy.io import wavfile
+
+def load(path):
+    fs, x = wavfile.read(path)
+    x = x.astype(float)
+    return x / np.max(np.abs(x))
+
+def ZCR(x):
+    signs = np.sign(x) # zamiana próbek na znaki +1/-1
+    return len(np.where(np.diff(signs))[0]) / len(x)   # diff wykrywa zmiany znaku = przejścia przez zero
+files = [r"zaj5\tone_440.wav", r"zaj5\tone_noisy.wav", r"zaj5\twotones.wav"]
+for f in files:
+    print(f, ZCR(load(f)))
+
+#output:
+
+#tone_440.wav 0.020396825396825396
+#tone_noisy.wav 0.03913832199546485
+#twotones.wav 0.045793650793650796</student_code><code_description /><comments_in_code>true</comments_in_code><images /><notes /></task></tasks></exercise><exercise><exercise_no>2</exercise_no><title>Energia RMS</title><intro>RMS (Root Mean Square) opisuje energię sygnału i jest miarą jego głośności.</intro><example_code>import numpy as np
+
+def RMS(x):
+    return np.sqrt(np.mean(x**2))
+
+print("RMS =", RMS(x))</example_code><tasks><task><task_no>2</task_no><title /><description>Porównaj RMS dla trzech plików audio.
+
+Wnioski:
+– który sygnał ma największą energię?
+– jak RMS zmienia się po dodaniu szumu?</description><student_code>import numpy as np
+from scipy.io import wavfile
+
+def load(path):
+    fs, x = wavfile.read(path)
+    return x.astype(float) / np.max(np.abs(x))
+
+def RMS(x):
+    return np.sqrt(np.mean(x**2))   # definicja RMS = pierwiastek z średniej kwadratów
+
+files = [r"zaj5\tone_440.wav", r"zaj5\tone_noisy.wav", r"zaj5\twotones.wav"]
+
+
+for f in files:
+    print(f, RMS(load(f)))
+
+#output:
+#tone_440.wav 0.7071009512854823
+#tone_noisy.wav 0.5009667463530629
+#twotones.wav 0.5016866278833947</student_code><code_description /><comments_in_code>true</comments_in_code><images /><notes /></task></tasks></exercise><exercise><exercise_no>3</exercise_no><title>Centroid widmowy</title><intro>Centroid widmowy opisuje „jasność” dźwięku – im wyższy, tym więcej wysokich częstotliwości w sygnale.</intro><example_code>import numpy as np
+from scipy.fft import fft, fftfreq
+
+N = len(x)
+X = np.abs(fft(x))[:N//2]
+f = fftfreq(N, 1/fs)[:N//2]
+
+centroid = np.sum(f * X) / np.sum(X)
+print("Centroid:", centroid, "Hz")</example_code><tasks><task><task_no>3</task_no><title /><description>Policz centroid widmowy dla:
+
+– tone_440.wav,
+– tone_noisy.wav.
+
+Wyjaśnij, dlaczego szum znacząco podnosi wartość centroidu.</description><student_code>import numpy as np
+from scipy.io import wavfile
+from scipy.fft import fft, fftfreq
+
+def load(path):
+    fs, x = wavfile.read(path)
+    return fs, x.astype(float)/np.max(np.abs(x))
+
+def centroid(x, fs):
+    N = len(x)
+    X = np.abs(fft(x))[:N//2]        # FFT → widmo amplitudowe tylko dodatnie częstotliwości
+    f = fftfreq(N, 1/fs)[:N//2]      # wektor częstotliwości dopasowany do FFT
+    return np.sum(f*X)/np.sum(X)     # środek masy widma
+
+for f in [r"zaj5\tone_440.wav", r"zaj5\tone_noisy.wav"]:
+    fs,x = load(f)
+    print(f, centroid(x,fs))
+
+#output:
+#tone_noisy.wav 10641.814436986413
+#tone_440.wav 447.0942072292362</student_code><code_description /><comments_in_code>true</comments_in_code><images /><notes /></task></tasks></exercise><exercise><exercise_no>4</exercise_no><title>Spectral Spread</title><intro>Spectral Spread opisuje szerokość widma wokół centroidu i pozwala odróżnić sygnały tonalne od szumowych.</intro><example_code>import numpy as np
+
+spread = np.sqrt(np.sum(((f - centroid)**2) * X) / np.sum(X))
+print("Spectral Spread:", spread, "Hz")</example_code><tasks><task><task_no>4</task_no><title /><description>Policz spectral spread dla tone_440.wav i tone_noisy.wav.
+
+Który sygnał ma bardziej skupione widmo?</description><student_code>import numpy as np
+from scipy.io import wavfile
+from scipy.fft import fft, fftfreq
+
+def load(path):
+    fs, x = wavfile.read(path)
+    return fs, x.astype(float)/np.max(np.abs(x))
+
+def spread(x,fs):
+    N=len(x)
+    X=np.abs(fft(x))[:N//2]
+    f=fftfreq(N,1/fs)[:N//2]
+    c=np.sum(f*X)/np.sum(X)
+    return np.sqrt(np.sum(((f-c)**2)*X)/np.sum(X))  # wariancja widma wokół centroidu
+
+for f in ["tone_440.wav","tone_noisy.wav"]:
+    fs,x=load(f)
+    print(f, spread(x,fs))
+
+#output
+#tone_noisy.wav 6562.8584906117385
+#tone_440.wav 316.6775952049453</student_code><code_description /><comments_in_code>true</comments_in_code><images /><notes /></task></tasks></exercise><exercise><exercise_no>5</exercise_no><title>Brightness</title><intro>Brightness opisuje udział energii powyżej określonego progu częstotliwości.</intro><example_code>import numpy as np
+
+fc = 1500
+idx = np.where(f &gt; fc)[0]
+
+brightness = np.sum(X[idx]) / np.sum(X)
+print("Brightness:", brightness)</example_code><tasks><task><task_no>5</task_no><title /><description>Oblicz brightness dla tone_noisy.wav.
+
+Dlaczego wynik jest wysoki mimo tonalności sygnału?</description><student_code>import numpy as np
+from scipy.io import wavfile
+from scipy.fft import fft, fftfreq
+
+def load(path):
+    fs, x = wavfile.read(path)
+    return fs, x.astype(float)/np.max(np.abs(x))
+
+def brightness(x,fs,fc=1500):
+    N=len(x)
+    X=np.abs(fft(x))[:N//2]
+    f=fftfreq(N,1/fs)[:N//2]
+    return np.sum(X[f&gt;fc])/np.sum(X)   # stosunek energii powyżej progu do całej energii
+
+fs,x=load("tone_noisy.wav")
+print(brightness(x,fs))
+
+#output:
+#0.8974897311474348</student_code><code_description /><comments_in_code>true</comments_in_code><images /><notes /></task></tasks></exercise><exercise><exercise_no>6</exercise_no><title>Tristimulus T1–T3</title><intro>Tristimulus opisuje udział harmonicznych w widmie i pozwala rozróżnić sygnały czysto tonalne od złożonych.</intro><example_code>import numpy as np
+from scipy.signal import find_peaks
+
+peaks, _ = find_peaks(X, height=np.max(X)*0.05)
+freqs = f[peaks]
+amps = X[peaks]
+
+order = np.argsort(freqs)
+freqs = freqs[order]
+amps = amps[order]
+
+T1 = amps[0]
+T2 = np.sum(amps[1:4])
+T3 = np.sum(amps[4:])
+
+S = T1 + T2 + T3
+print("T1:", T1/S, "T2:", T2/S, "T3:", T3/S)</example_code><tasks><task><task_no>6</task_no><title /><description>Policz T1–T3 dla:
+
+– tone_440.wav,
+– tone_noisy.wav.
+
+Który sygnał ma bardziej tonalny charakter?</description><student_code>import numpy as np
+from scipy.io import wavfile
+from scipy.fft import fft
+from scipy.signal import find_peaks
+
+def load(path):
+    fs, x = wavfile.read(path)
+    return fs, x.astype(float)/np.max(np.abs(x))
+
+def tristimulus(x,fs):
+    N=len(x)
+    X=np.abs(fft(x))[:N//2]
+
+    peaks,_=find_peaks(X,height=np.max(X)*0.05)   # wykrycie harmonicznych powyżej 5% max amplitudy
+    amps=X[np.sort(peaks)]                         # amplitudy harmonicznych w kolejności częstotliwości
+
+    if len(amps)&lt;5:
+        amps=np.pad(amps,(0,5-len(amps)))          # dopełnienie zerami aby uniknąć indeksów poza zakresem
+
+    T1=amps[0]
+    T2=np.sum(amps[1:4])
+    T3=np.sum(amps[4:])
+    S=T1+T2+T3
+
+    return T1/S,T2/S,T3/S
+
+for f in ["tone_440.wav","tone_noisy.wav"]:
+    fs,x=load(f)
+    print(f, tristimulus(x,fs))
+
+#output
+#tone_noisy.wav (np.float64(1.0), np.float64(0.0), np.float64(0.0))
+#tone_440.wav (np.float64(1.0), np.float64(0.0), np.float64(0.0))</student_code><code_description /><comments_in_code>true</comments_in_code><images /><notes /></task></tasks></exercise><exercise><exercise_no>7</exercise_no><title>Budowa wektora cech</title><intro>Wektor cech to zestaw deskryptorów opisujących sygnał i stanowi wejście do algorytmów uczenia maszynowego.</intro><tasks><task><task_no>7</task_no><title /><description>Wyznacz wektory cech (ZCR, RMS, centroid, spread, brightness, T1, T2, T3) dla:
+
+– tone_440.wav,
+– tone_noisy.wav,
+– two_tones.wav.</description><student_code>import numpy as np
+from scipy.io import wavfile
+from scipy.fft import fft, fftfreq
+from scipy.signal import find_peaks
+
+def load(path):
+    fs, x = wavfile.read(path)
+    return fs, x.astype(float)/np.max(np.abs(x))
+
+def features(x,fs):
+    N=len(x)
+    X=np.abs(fft(x))[:N//2]
+    f=fftfreq(N,1/fs)[:N//2]
+
+    zcr=len(np.where(np.diff(np.sign(x)))[0])/len(x)
+    rms=np.sqrt(np.mean(x**2))
+    c=np.sum(f*X)/np.sum(X)
+    s=np.sqrt(np.sum(((f-c)**2)*X)/np.sum(X))
+    b=np.sum(X[f&gt;1500])/np.sum(X)
+
+    peaks,_=find_peaks(X,height=np.max(X)*0.1)
+    amps=X[np.sort(peaks)]
+
+    if len(amps)&lt;5:
+        amps=np.pad(amps,(0,5-len(amps)))
+
+    T1=amps[0]
+    T2=np.sum(amps[1:4])
+    T3=np.sum(amps[4:])
+    S=T1+T2+T3
+
+    return [zcr,rms,c,s,b,T1/S,T2/S,T3/S]   # gotowy wektor cech ML
+
+for f in ["tone_440.wav","tone_noisy.wav","two_tones.wav"]:
+    fs,x=load(f)
+    print(f, features(x,fs))
+
+#output
+#\twotones.wav [0.045793650793650796, np.float64(0.5016866278833947), np.float64(723.775558331805), np.float64(362.26818507909593), np.float64(0.00036645177426535767), np.float64(0.49999985166664335), np.float64(0.5000001483333567), np.float64(0.0)]
+#tone_noisy.wav [0.03913832199546485, np.float64(0.5009667463530629), np.float64(10641.814436986413), np.float64(6562.8584906117385), np.float64(0.8974897311474348), np.float64(1.0), np.float64(0.0), np.float64(0.0)]
+#tone_440.wav [0.020396825396825396, np.float64(0.7071009512854823), np.float64(447.0942072292362), np.float64(316.6775952049453), np.float64(0.000639651088253621), np.float64(1.0), np.float64(0.0), np.float64(0.0)]</student_code><code_description /><comments_in_code>true</comments_in_code><images /><notes /></task></tasks></exercise><exercise><exercise_no>8</exercise_no><title>Klasyfikacja kNN</title><intro>Algorytm kNN klasyfikuje sygnały na podstawie podobieństwa wektorów cech.</intro><tasks><task><task_no>8</task_no><title /><description>Zbuduj zestaw treningowy:
+
+– tone_440.wav → „ton",
+– tone_noisy.wav → „szum",
+– two_tones.wav → „ton_złożony".
+
+Dodaj własny sygnał i sprawdź, jak zostanie sklasyfikowany.</description><student_code>import numpy as np
+from scipy.io import wavfile
+from scipy.fft import fft, fftfreq
+from scipy.signal import find_peaks
+from sklearn.neighbors import KNeighborsClassifier
+
+def load(path):
+    fs, x = wavfile.read(path)
+    # dźwięk testowy jest stereo i nie chciało mi się szukać kolejnego w mono
+    if x.ndim &gt; 1:
+        x = np.mean(x, axis=1)
+    return fs, x.astype(float)/np.max(np.abs(x))
+def features(x,fs):
+    N=len(x)
+    X=np.abs(fft(x))[:N//2]
+    f=fftfreq(N,1/fs)[:N//2]
+
+    zcr=len(np.where(np.diff(np.sign(x)))[0])/len(x)
+    rms=np.sqrt(np.mean(x**2))
+    c=np.sum(f*X)/np.sum(X)
+    s=np.sqrt(np.sum(((f-c)**2)*X)/np.sum(X))
+    b=np.sum(X[f&gt;1500])/np.sum(X)
+
+    peaks,_=find_peaks(X,height=np.max(X)*0.1)
+    amps=X[np.sort(peaks)]
+
+    if len(amps)&lt;5:
+        amps=np.pad(amps,(0,5-len(amps)))
+
+    T1=amps[0]; T2=np.sum(amps[1:4]); T3=np.sum(amps[4:])
+    S=T1+T2+T3
+
+    return [zcr,rms,c,s,b,T1/S,T2/S,T3/S]
+
+data=["tone_440.wav","tone_noisy.wav","two_tones.wav"]
+labels=["ton","szum","ton_złożony"]
+
+X=[]
+for f in data:
+    fs,x=load(f)
+    X.append(features(x,fs))
+
+knn=KNeighborsClassifier(n_neighbors=3)  # klasyfikacja na podstawie 3 najbliższych sąsiadów
+knn.fit(X,labels)
+
+fs,x=load("test.wav")
+print(knn.predict([features(x,fs)]))
+
+
+#output
+#['szum']</student_code><code_description /><comments_in_code>true</comments_in_code><images /><notes /></task></tasks></exercise><exercise><exercise_no>9</exercise_no><title>Klasyfikacja SVM i macierz pomyłek</title><intro>SVM to bardziej zaawansowany klasyfikator, a macierz pomyłek pozwala ocenić skuteczność klasyfikacji.</intro><tasks><task><task_no>9</task_no><title /><description>Porównaj skuteczność kNN i SVM.
+
+W 3–4 zdaniach uzasadnij, która metoda lepiej radzi sobie z Twoim zestawem danych.</description><student_code>import numpy as np
+from scipy.io import wavfile
+from scipy.fft import fft, fftfreq
+from scipy.signal import find_peaks
+from sklearn.svm import SVC
+from sklearn.metrics import confusion_matrix
+
+def load(path):
+    fs, x = wavfile.read(path)
+    return fs, x.astype(float)/np.max(np.abs(x))
+
+def features(x,fs):
+    N=len(x)
+    X=np.abs(fft(x))[:N//2]
+    f=fftfreq(N,1/fs)[:N//2]
+
+    zcr=len(np.where(np.diff(np.sign(x)))[0])/len(x)
+    rms=np.sqrt(np.mean(x**2))
+    c=np.sum(f*X)/np.sum(X)
+    s=np.sqrt(np.sum(((f-c)**2)*X)/np.sum(X))
+    b=np.sum(X[f&gt;1500])/np.sum(X)
+
+    peaks,_=find_peaks(X,height=np.max(X)*0.1)
+    amps=X[np.sort(peaks)]
+
+    if len(amps)&lt;5:
+        amps=np.pad(amps,(0,5-len(amps)))
+
+    T1=amps[0]; T2=np.sum(amps[1:4]); T3=np.sum(amps[4:])
+    S=T1+T2+T3
+
+    return [zcr,rms,c,s,b,T1/S,T2/S,T3/S]
+
+files=["tone_440.wav","tone_noisy.wav","two_tones.wav"]
+labels=["ton","szum","ton_złożony"]
+
+X=[]
+for f in files:
+    fs,x=load(f)
+    X.append(features(x,fs))
+
+svm=SVC(kernel="rbf")   # jądro RBF pozwala oddzielać klasy nieliniowo
+svm.fit(X,labels)
+
+pred=svm.predict(X)
+print(confusion_matrix(labels,pred))   # pokazuje gdzie model się myli
+
+#output
+#[[1 0 0]
+ #[0 1 0]
+ #[0 0 1]]</student_code><code_description /><comments_in_code>true</comments_in_code><images /><notes /></task></tasks></exercise></exercises></form></report>
